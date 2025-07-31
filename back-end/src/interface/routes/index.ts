@@ -1,16 +1,15 @@
 import { Router } from 'express';
 import { WebhookController } from '../controllers/webhook.controller';
-import PrismaUserRepository from '../../infrastructure/repository/user.repository';
+import UserRepository from '../../infrastructure/repository/user.repository';
 import MessageRepository from '../../infrastructure/repository/message.repository';
 import OpenAIService from '../../infrastructure/services/openAI.service';
 import WhatsappService from '../../infrastructure/services/whatsapp.service';
 
-import { dbClient } from '../../infrastructure/database/prisma';
 
 const webhookRoutes = Router();
 
 const webhookController = new WebhookController(
-    new PrismaUserRepository(dbClient),
+    new UserRepository(),
     new MessageRepository(),
     new OpenAIService(),
     new WhatsappService()

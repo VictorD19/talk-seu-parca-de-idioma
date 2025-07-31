@@ -36,4 +36,5 @@ interface Key {
     remoteJid: string;
     fromMe: boolean;
     id: string;
+    participant?:string
 }

@@ -1,7 +1,7 @@
 
 import { Message, MessageCreation } from "../../domain/entities/message";
 
-export interface IMessageRepository {
+export default interface IMessageRepository {
   create(message: MessageCreation): Promise<Message>;
   findByUserId(userId: string): Promise<Message[]>;
   findLatestByUserId(userId: string, limit: number): Promise<Message[]>;

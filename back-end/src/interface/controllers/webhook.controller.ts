@@ -4,8 +4,9 @@ import MessageRepository from '../../infrastructure/repository/message.repositor
 import OpenAIService from '../../infrastructure/services/openAI.service';
 import WhatsappService from '../../infrastructure/services/whatsapp.service';
 import { IReceivedWebhookMessage } from '../../domain/objs/receivedWebhookMessage';
-import { User, UserCreation } from '../../domain/entities/user';
-import { Message, MessageCreation } from '../../domain/entities/message';
+import { UserCreation } from '../../domain/entities/user';
+import { PhoneValidator } from '../../shared/utils/phonevalidator';
+import { AppError } from "../../shared/errors/appErros"
 
 export class WebhookController {
     constructor(
@@ -16,61 +17,39 @@ export class WebhookController {
     ) { }
 
     async handle(req: Request, res: Response) {
-        const { from, message, ...data } = req.body;
 
         try {
-            let receivedMessage: IReceivedWebhookMessage = req.body
-            console.log('Received webhook:', req.body.data);
-            
-            let user = await this.userRepository.findByPhone(receivedMessage.key.remoteJid.split('@')[0]);
+            let receivedMessage: IReceivedWebhookMessage = req.body.data
+            let telefone = receivedMessage.key.participant ? receivedMessage.key.participant.split('@')[0] : receivedMessage.key.remoteJid.split('@')[0]
+            let message = receivedMessage.message.conversation || "";
 
+            let isValidPhone = PhoneValidator(telefone);
+            if (!isValidPhone)
+                throw new AppError("Formato de telefone não valido ")
+
+            let user = await this.userRepository.findByPhone(telefone);
             if (!user) {
                 let newUser: UserCreation = {
                     nome: receivedMessage.pushName || 'Desconhecido',
-                    telefone: receivedMessage.key.remoteJid.split('@')[0],
-                    genero_agente: 'masculino',
+                    telefone: telefone,
                     linguagem_preferida: 'informal',
-                    tipo_mensagem_preferida: 'texto',
-                    nome_agente: 'Talk',
-                    thread_id: "",
-                    created_at: new Date(),
-                    updated_at: new Date()
+                    tipo_mensagem_preferida: 'text'
                 }
                 user = await this.userRepository.create(newUser);
             }
+            if (user.limitedMessage == 0 && !user.isPremium)
+                return //Enviar mensagem de fluxo de pagamento
 
-            // 2. Salvar mensagem recebid
-            let contentMessage = receivedMessage.messageType === "conversation" ? receivedMessage.message.conversation : receivedMessage.message.base64;
-            let message: MessageCreation = {
-                user_id: user.id,
-                sender: 'user',
-                content: contentMessage,
-                type: 'text',
-                created_at: new Date()
-            }
-            await this.messageRepository.create(message);
-
-            // // 3. Processar com OpenAI
-            // const aiResponse = await this.openAIService.processMessage(
-            //     user.thread_id,
-            //     message
-            // );
-
-            // // 4. Salvar resposta do agente
-            // await this.messageRepository.create({
-            //     user_id: user.id,
-            //     sender: 'agent',
-            //     content: aiResponse,
-            //     type: 'text'
-            // });
-
-            // // 5. Enviar resposta via WhatsApp
-            // await this.whatsappService.sendMessage(from, aiResponse);
-
+            let resposta = await this.openAIService.processMessage(user.thread_id || "", message)
+            console.log(resposta, "resposta")
             return res.status(200).json({ success: true });
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ error: 'Internal server error' });
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({ error: error.message });
+            }
+            console.log(error)
+            return res.status(400).json({ error: 'Ocorreu um erro ao processar a requisição' });
         }
+
     }
 }

@@ -1,8 +1,8 @@
 import app from "./infrastructure/app";
-import { startDBPrisma } from "./infrastructure/database/prisma";
+import connectToMongoDB from "./infrastructure/database/mongo";
 
 async function startServer() {
-  await startDBPrisma()
+  await connectToMongoDB()
   const PORT = process.env.PORT || 3000;
 
   app.listen(PORT, () => {
