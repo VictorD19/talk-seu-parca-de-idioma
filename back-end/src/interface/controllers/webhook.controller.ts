@@ -7,12 +7,14 @@ import { IReceivedWebhookMessage } from '../../domain/objs/receivedWebhookMessag
 import { UserCreation } from '../../domain/entities/user';
 import { PhoneValidator } from '../../shared/utils/phonevalidator';
 import { AppError } from "../../shared/errors/appErros"
+import SaveMessage from 'src/application/useCase/message/saveMessage';
 
 export class WebhookController {
     constructor(
         private userRepository: UserRepository,
         private messageRepository: MessageRepository,
         private openAIService: OpenAIService,
+        private saveMessage: SaveMessage,
         private whatsappService: WhatsappService
     ) { }
 
@@ -22,7 +24,7 @@ export class WebhookController {
             let receivedMessage: IReceivedWebhookMessage = req.body.data
             let telefone = receivedMessage.key.participant ? receivedMessage.key.participant.split('@')[0] : receivedMessage.key.remoteJid.split('@')[0]
             let message = receivedMessage.message.conversation || "";
-
+            let typeMessage = receivedMessage.messageType
             let isValidPhone = PhoneValidator(telefone);
             if (!isValidPhone)
                 throw new AppError("Formato de telefone não valido ")
@@ -40,8 +42,10 @@ export class WebhookController {
             if (user.limitedMessage == 0 && !user.isPremium)
                 return //Enviar mensagem de fluxo de pagamento
 
+            setTimeout(async () => await this.saveMessage.store('user', user.id, message, typeMessage), 1000)
             let resposta = await this.openAIService.processMessage(user.thread_id || "", message)
-            console.log(resposta, "resposta")
+            setTimeout(async () => await this.saveMessage.store('user', user.id, resposta, "conversation"))
+
             return res.status(200).json({ success: true });
         } catch (error) {
             if (error instanceof AppError) {
