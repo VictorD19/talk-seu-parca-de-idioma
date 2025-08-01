@@ -2,7 +2,7 @@ import { User, UserCreation } from '../../domain/entities/user';
 import IUserRepository from '../../application/interface/user.interface';
 import { UserModel } from '../models/user.model';
 
-export  default class UserRepository implements IUserRepository {
+export default class UserRepository implements IUserRepository {
     async create(user: UserCreation): Promise<User> {
         const created = await UserModel.create(user);
         return this.mapToEntity(created);
@@ -31,6 +31,9 @@ export  default class UserRepository implements IUserRepository {
         );
         if (!updated) throw new Error('User not found');
         return this.mapToEntity(updated);
+    }
+    async updateMessageLimited(idUser: string, qte: number): Promise<void> {
+        await UserModel.findOneAndUpdate({ _id: idUser }, { $set: { limitedMessage: qte } })
     }
 
     private mapToEntity(doc: any): User {

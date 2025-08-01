@@ -42,9 +42,14 @@ export class WebhookController {
             if (user.limitedMessage == 0 && !user.isPremium)
                 return //Enviar mensagem de fluxo de pagamento
 
-            setTimeout(async () => await this.saveMessage.store('user', user.id, message, typeMessage), 1000)
+            await this.saveMessage.store('user', user, message, typeMessage)
+
             let resposta = await this.openAIService.processMessage(user.thread_id || "", message)
-            setTimeout(async () => await this.saveMessage.store('user', user.id, resposta, "conversation"))
+            setTimeout(async () => {
+                await this.whatsappService.sendMessage(user.telefone, resposta);
+                await this.saveMessage.store('agent', user, resposta, "conversation")
+
+            }, 1000)
 
             return res.status(200).json({ success: true });
         } catch (error) {

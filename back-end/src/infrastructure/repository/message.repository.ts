@@ -29,6 +29,9 @@ export default class MongoMessageRepository implements IMessageRepository {
     const message = await MessageModel.findOne({ id });
     return message ? this.mapToEntity(message) : null;
   }
+  async updateMessageLimited(userId: string, qte: number): Promise<void> {
+    await MessageModel.findOneAndUpdate({ _id: userId }, { limitedMessage: qte })
+  }
 
   private mapToEntity(doc: any): Message {
     return new Message(
