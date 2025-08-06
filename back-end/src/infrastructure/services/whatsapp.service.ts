@@ -1,19 +1,24 @@
-import { Axios } from "axios";
+import axios from "axios";
+import dotenv from 'dotenv';
+dotenv.config();
 
 class WhatsappService {
-    constructor(
-        private _axios = new Axios({
-            baseURL: process.env.URL_POST_MESSAGE | "",
+    private _axios;
+    constructor() {
+        let url: string = `${process.env.URL_POST_MESSAGE}` || "http://localhost:8081/"
+        console.log(url, "url")
+        this._axios = axios.create({
+            baseURL: url,
             headers: {
-                "Authorization": `Bearer ${process.env.APY_KEY_EVOLUTION}`
+                'Content-Type': 'application/json',
+                "apikey": `${process.env.APY_KEY_EVOLUTION}`
             }
         })
-    ) {
-
     }
 
     async sendMessage(number: string, content: string) {
-        await this._axios.post("send", { number, content })
+        let dataEnviar = { number: number, text: content }
+        await this._axios.post("message/sendText/" + process.env.INSTANCIA_ID_EVOLUTION, dataEnviar)
     }
 }
 

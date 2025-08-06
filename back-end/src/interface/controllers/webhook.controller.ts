@@ -10,14 +10,19 @@ import { AppError } from "../../shared/errors/appErros"
 import SaveMessage from 'src/application/useCase/message/saveMessage';
 
 export class WebhookController {
+    private _userRepository;
+    private _messageRepository;
+    private _openAIService;
+    private _whatsappService;
+    private _saveMessage;
     constructor(
-        private userRepository: UserRepository,
-        private messageRepository: MessageRepository,
-        private openAIService: OpenAIService,
-        private saveMessage: SaveMessage,
-        private whatsappService: WhatsappService
-    ) { }
-
+    ) {
+        this._userRepository = new UserRepository();
+        this._messageRepository = new MessageRepository();
+        this._openAIService = new OpenAIService();
+        this._whatsappService = new WhatsappService();
+        this._saveMessage = new SaveMessage(this._messageRepository, this._userRepository);
+    }
     async handle(req: Request, res: Response) {
 
         try {
@@ -29,25 +34,27 @@ export class WebhookController {
             if (!isValidPhone)
                 throw new AppError("Formato de telefone não valido ")
 
-            let user = await this.userRepository.findByPhone(telefone);
+            let user = await this._userRepository.findByPhone(telefone);
             if (!user) {
                 let newUser: UserCreation = {
-                    nome: receivedMessage.pushName || 'Desconhecido',
+                    name: receivedMessage.pushName || 'Desconhecido',
                     telefone: telefone,
-                    linguagem_preferida: 'informal',
-                    tipo_mensagem_preferida: 'text'
+                    type_message_preference: "text"
                 }
-                user = await this.userRepository.create(newUser);
+                user = await this._userRepository.create(newUser);
             }
-            if (user.limitedMessage == 0 && !user.isPremium)
-                return //Enviar mensagem de fluxo de pagamento
+            if (user.limitedMessage == 0 && !user.isPremium) {
+                await this._whatsappService.sendMessage(user.telefone, "Seu teste gratuito chegou a fim, Deseja aquirid a versão full ?");
+                return
+            }
+            console.log(user,"controa")
+            await this._saveMessage.store('user', user, message, typeMessage)
 
-            await this.saveMessage.store('user', user, message, typeMessage)
+            let resposta = await this._openAIService.processMessage(message, user)
 
-            let resposta = await this.openAIService.processMessage(user.thread_id || "", message)
             setTimeout(async () => {
-                await this.whatsappService.sendMessage(user.telefone, resposta);
-                await this.saveMessage.store('agent', user, resposta, "conversation")
+                await this._whatsappService.sendMessage(user.telefone, resposta);
+                await this._saveMessage.store('agent', user, resposta, "conversation")
 
             }, 1000)
 

@@ -1,12 +1,13 @@
 export class User {
   constructor(
     public id: string,
-    public nome: string,
+    public name: string,
     public telefone: string,
-    public linguagem_preferida: 'formal' | 'informal',
-    public tipo_mensagem_preferida: 'text' | 'audioMessage',
-    public genero_agente?: 'masculino' | 'feminino' | null,
-    public nome_agente?: string,
+    public languageLearn?: string,
+    public type_message_preference?: 'text' | 'audioMessage',
+    public nameAgent?: string,
+    public user_level?: 'iniciante' | 'intermediario' | 'avancado',
+    public typeAgent?: 'friend' | 'mentor' | 'sensei',
     public isPremium?: boolean,
     public limitedMessage?: number,
     public thread_id?: string | null,

@@ -8,12 +8,7 @@ import WhatsappService from '../../infrastructure/services/whatsapp.service';
 
 const webhookRoutes = Router();
 
-const webhookController = new WebhookController(
-    new UserRepository(),
-    new MessageRepository(),
-    new OpenAIService(),
-    new WhatsappService()
-);
+const webhookController = new WebhookController()
 
 webhookRoutes.post('/webhook', async (req, res) => await webhookController.handle(req, res));
 export default webhookRoutes;
