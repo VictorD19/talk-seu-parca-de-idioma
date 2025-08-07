@@ -19,7 +19,7 @@ export class WebhookController {
     ) {
         this._userRepository = new UserRepository();
         this._messageRepository = new MessageRepository();
-        this._openAIService = new OpenAIService();
+        this._openAIService = new OpenAIService(this._messageRepository);
         this._whatsappService = new WhatsappService();
         this._saveMessage = new SaveMessage(this._messageRepository, this._userRepository);
     }
@@ -39,31 +39,27 @@ export class WebhookController {
                 let newUser: UserCreation = {
                     name: receivedMessage.pushName || 'Desconhecido',
                     telefone: telefone,
-                    type_message_preference: "text"
+                    type_message_preference: "text",
+                    limitedMessage: 20
                 }
                 user = await this._userRepository.create(newUser);
+                console.log(user, "usuario cirado")
             }
             if (user.limitedMessage == 0 && !user.isPremium) {
                 await this._whatsappService.sendMessage(user.telefone, "Seu teste gratuito chegou a fim, Deseja aquirid a versão full ?");
                 return
             }
-            console.log(user,"controa")
+            console.log(user)
             await this._saveMessage.store('user', user, message, typeMessage)
-
-            let resposta = await this._openAIService.processMessage(message, user)
-
-            setTimeout(async () => {
-                await this._whatsappService.sendMessage(user.telefone, resposta);
-                await this._saveMessage.store('agent', user, resposta, "conversation")
-
-            }, 1000)
+            let resposta = await this._openAIService.processMessage(user)
+            await this._whatsappService.sendMessage(user.telefone, resposta);
+            await this._saveMessage.store('agent', user, resposta, "conversation")
 
             return res.status(200).json({ success: true });
         } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ error: error.message });
             }
-            console.log(error)
             return res.status(400).json({ error: 'Ocorreu um erro ao processar a requisição' });
         }
 

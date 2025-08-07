@@ -122,9 +122,13 @@ export default {
             - Current language level (beginner, intermediate, advanced)
 
             # Tools:
-            - Use SavePreferences(name, language, agent_gender, personality, user_level) once all preferences have been obtained. 
-            - Use UpdatePreference(key, value) whenever the user mentions a new preference or makes a change.
+            - Use GetKeys() to get all available user keys
+            - Use UpdatePreference("key", "value") whenever the user mentions a new preference or makes a change. 
+              - Use GetKeys para achar se a key existe ou a correta para atualizar
+              - key (string): The key of the preference to be updated. Examples: "languageLearn", "objectiveLearnLanguage", "typeAgent", "user_level".
+              - value (string | number | boolean | object | array): The new value associated with the provided key. The type must be consistent with the preference type.
             - Use RetrievePreferences() if you're in a previously started conversation.
+         
 
             # Conversation Rules:
             - Start the conversation in a friendly, relaxed manner, as if you were meeting someone new.

@@ -16,7 +16,9 @@ class WhatsappService {
         })
     }
 
-    async sendMessage(number: string, content: string) {
+    async sendMessage(number: string | undefined, content: string) {
+        if(!number)
+            throw new Error("Precisa informar um numero valido para enviar a mensagem")
         let dataEnviar = { number: number, text: content }
         await this._axios.post("message/sendText/" + process.env.INSTANCIA_ID_EVOLUTION, dataEnviar)
     }

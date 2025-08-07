@@ -4,7 +4,9 @@ import { UserModel } from '../models/user.model';
 
 export default class UserRepository implements IUserRepository {
     async create(user: UserCreation): Promise<User> {
+        console.log(user,"criação")
         const created = await UserModel.create(user);
+        console.log(created,"criado")
         return this.mapToEntity(created);
     }
 
@@ -12,10 +14,15 @@ export default class UserRepository implements IUserRepository {
         const user = await UserModel.findOne({ telefone });
         return user ? this.mapToEntity(user) : null;
     }
+    async findByID(id: string): Promise<User | null> {
+        const user = await UserModel.findOne({ id: id });
+        return user ? this.mapToEntity(user) : null;
+    }
 
     async update(id: string, data: Partial<User>): Promise<User> {
+        console.log(id, data, "update")
         const updated = await UserModel.findOneAndUpdate(
-            { id },
+            { _id: id },
             { ...data, updated_at: new Date() },
             { new: true }
         );
@@ -39,15 +46,18 @@ export default class UserRepository implements IUserRepository {
     private mapToEntity(doc: any): User {
         return new User(
             doc.id,
-            doc.nome,
+            doc.name,
             doc.telefone,
-            doc.linguagem_preferida,
-            doc.tipo_mensagem_preferida,
-            doc.genero_agente,
-            doc.nome_agente,
+            doc.languageLearn,
+            doc.type_message_preference,
+            doc.nameAgent,
+            doc.user_level,
+            doc.typeAgent,
+            doc.isPremium,
+            doc.limitedMessage,
             doc.thread_id,
             doc.created_at,
-            doc.updated_at
+            doc.updated_at,
         );
     }
 }

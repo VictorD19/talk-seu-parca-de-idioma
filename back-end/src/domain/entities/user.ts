@@ -1,9 +1,10 @@
 export class User {
   constructor(
     public id: string,
-    public name: string,
-    public telefone: string,
+    public name?: string,
+    public telefone?: string,
     public languageLearn?: string,
+    public objectiveLearnLanguage?: string,
     public type_message_preference?: 'text' | 'audioMessage',
     public nameAgent?: string,
     public user_level?: 'iniciante' | 'intermediario' | 'avancado',
